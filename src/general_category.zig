@@ -2,7 +2,6 @@
 
 const std = @import("std");
 const assert = std.debug.assert;
-const stringToEnum = @import("utils.zig").stringToEnum;
 
 pub const GeneralCategory = enum {
     Lu, // Uppercase_Letter: an uppercase letter
@@ -88,7 +87,7 @@ pub const GeneralCategory = enum {
     }
 
     pub fn fromString(str: []const u8) ?GeneralCategory {
-        return stringToEnum(GeneralCategory, str);
+        return std.meta.stringToEnum(GeneralCategory, str);
     }
 };
 

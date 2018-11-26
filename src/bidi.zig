@@ -1,4 +1,4 @@
-const stringToEnum = @import("utils.zig").stringToEnum;
+const std = @import("std");
 
 pub const BidiClass = enum {
     // Strong Types
@@ -33,6 +33,6 @@ pub const BidiClass = enum {
     PDI,  // Pop_Directional_Isolate: U+2069: terminates an isolate control
 
     pub fn fromString(str: []const u8) ?BidiClass {
-        return stringToEnum(BidiClass, str);
+        return std.meta.stringToEnum(BidiClass, str);
     }
 };

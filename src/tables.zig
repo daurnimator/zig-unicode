@@ -4,7 +4,6 @@
 
 const std = @import("std");
 const assert = std.debug.assert;
-const stringToEnum = @import("utils.zig").stringToEnum;
 const GeneralCategory = @import("general_category.zig").GeneralCategory;
 const BidiClass = @import("bidi.zig").BidiClass;
 
@@ -31,7 +30,7 @@ const DecompositionTag = enum {
     compat,    // Otherwise unspecified compatibility character
 
     pub fn fromString(str: []const u8) ?DecompositionTag {
-        return stringToEnum(DecompositionTag, str);
+        return std.meta.stringToEnum(DecompositionTag, str);
     }
 };
 
