@@ -138,21 +138,26 @@ const StringIterator = struct {
     }
 };
 
+const InvalidUnicodeDataLine = error.InvalidUnicodeDataLine;
+const UnknownBidiClass = error.UnknownBidiClass;
+const UnknownGeneralCategory = error.UnknownGeneralCategory;
+const UnknownDecompositionTag = error.UnknownDecompositionTag;
+
 fn parseUnicodeDataEntry(line: []const u8) !UnicodeDataEntry {
     var field_iter = StringIterator.init(line);
 
-    const codepoint = try std.fmt.parseInt(Codepoint, field_iter.next(';') orelse return error.InvalidUnicodeDataLine, 16);
+    const codepoint = try std.fmt.parseInt(Codepoint, field_iter.next(';') orelse return InvalidUnicodeDataLine, 16);
 
-    const name = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+    const name = field_iter.next(';') orelse return InvalidUnicodeDataLine;
 
-    const general_category = GeneralCategory.fromString(field_iter.next(';') orelse return error.InvalidUnicodeDataLine).?;
+    const general_category = GeneralCategory.fromString(field_iter.next(';') orelse return InvalidUnicodeDataLine) orelse return UnknownGeneralCategory;
 
-    const canonical_combining_class = try std.fmt.parseInt(CanonicalCombiningClass, field_iter.next(';') orelse return error.InvalidUnicodeDataLine, 10);
+    const canonical_combining_class = try std.fmt.parseInt(CanonicalCombiningClass, field_iter.next(';') orelse return InvalidUnicodeDataLine, 10);
 
-    const bidi_class = BidiClass.fromString(field_iter.next(';') orelse return error.InvalidUnicodeDataLine).?;
+    const bidi_class = BidiClass.fromString(field_iter.next(';') orelse return InvalidUnicodeDataLine) orelse return UnknownBidiClass;
 
     const decomposition: ?Decomposition = decomposition_value: {
-        const decomposition_field = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+        const decomposition_field = field_iter.next(';') orelse return InvalidUnicodeDataLine;
         if (decomposition_field.len == 0) {
             break :decomposition_value null;
         }
@@ -162,9 +167,9 @@ fn parseUnicodeDataEntry(line: []const u8) !UnicodeDataEntry {
         const tag: ?DecompositionTag = tag: {
             if (decomposition_field[0] == '<') {
                 iter.index += 1;
-                var tmp = DecompositionTag.fromString(iter.next('>').?).?;
+                var tmp = iter.next('>') orelse return InvalidUnicodeDataLine;
                 _ = iter.next(' ');
-                break :tag tmp;
+                break :tag DecompositionTag.fromString(tmp) orelse return UnknownDecompositionTag;
             } else {
                 break :tag null;
             }
@@ -185,9 +190,9 @@ fn parseUnicodeDataEntry(line: []const u8) !UnicodeDataEntry {
     };
 
     const numeric: ?NumericValue = numeric_value: {
-        const numeric_type_decimal = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
-        const numeric_type_digit = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
-        const numeric_type_numeric = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+        const numeric_type_decimal = field_iter.next(';') orelse return InvalidUnicodeDataLine;
+        const numeric_type_digit = field_iter.next(';') orelse return InvalidUnicodeDataLine;
+        const numeric_type_numeric = field_iter.next(';') orelse return InvalidUnicodeDataLine;
 
         if (numeric_type_decimal.len != 0) {
             assert(std.mem.eql(u8, numeric_type_decimal, numeric_type_digit));
@@ -223,7 +228,7 @@ fn parseUnicodeDataEntry(line: []const u8) !UnicodeDataEntry {
     };
 
     const bidi_mirrored: bool = bidi_mirrored: {
-        const field = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+        const field = field_iter.next(';') orelse return InvalidUnicodeDataLine;
         assert(field.len == 1);
         if (field[0] == 'Y') {
             break :bidi_mirrored true;
@@ -233,19 +238,19 @@ fn parseUnicodeDataEntry(line: []const u8) !UnicodeDataEntry {
         }
     };
 
-    const unicode_1_name = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+    const unicode_1_name = field_iter.next(';') orelse return InvalidUnicodeDataLine;
 
-    const iso_comment = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+    const iso_comment = field_iter.next(';') orelse return InvalidUnicodeDataLine;
 
     const simple_uppercase_mapping: ?Codepoint = simple_uppercase_mapping: {
-        const field = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+        const field = field_iter.next(';') orelse return InvalidUnicodeDataLine;
         break :simple_uppercase_mapping
             if (field.len != 0) try std.fmt.parseInt(Codepoint, field, 16)
             else null;
     };
 
     const simple_lowercase_mapping: ?Codepoint = simple_lowercase_mapping: {
-        const field = field_iter.next(';') orelse return error.InvalidUnicodeDataLine;
+        const field = field_iter.next(';') orelse return InvalidUnicodeDataLine;
         break :simple_lowercase_mapping
             if (field.len != 0) try std.fmt.parseInt(Codepoint, field, 16)
             else null;
